@@ -543,7 +543,39 @@
   .inv-item.legendary{
     border-color: var(--gold);
     box-shadow: 0 0 0 2px rgba(255,216,102,0.4);
+    animation: legendary-glow 1.8s ease-in-out infinite;
   }
+  .inv-item.rarity-rare{
+    border-color: #6FB7FF;
+    box-shadow: 0 0 0 2px rgba(111,183,255,0.3);
+  }
+  .inv-item.rarity-special{
+    border-color: #C79BFF;
+    box-shadow: 0 0 0 2px rgba(199,155,255,0.35);
+    animation: special-shimmer 2.2s ease-in-out infinite;
+  }
+  @keyframes legendary-glow{
+    0%,100%{ box-shadow: 0 0 0 2px rgba(255,216,102,0.4); }
+    50%{ box-shadow: 0 0 0 5px rgba(255,216,102,0.7); }
+  }
+  @keyframes special-shimmer{
+    0%,100%{ box-shadow: 0 0 0 2px rgba(199,155,255,0.35); }
+    50%{ box-shadow: 0 0 0 4px rgba(199,155,255,0.6); }
+  }
+  .rarity-badge{
+    position:absolute; top:-6px; left:-6px;
+    font-size: 8px;
+    line-height:1;
+    background:#fff;
+    border-radius: 8px;
+    padding: 2px 4px;
+    border: 1.5px solid rgba(59,51,85,0.15);
+    white-space:nowrap;
+    z-index:2;
+  }
+  .rarity-badge.b-rare{ color:#4A90D9; border-color:#6FB7FF; }
+  .rarity-badge.b-special{ color:#9B6BE0; border-color:#C79BFF; }
+  .rarity-badge.b-legendary{ color:var(--amber); border-color:var(--gold); }
 
   .companion-badge{
     position:absolute; right: -6px; bottom: 20px;
@@ -1801,6 +1833,19 @@ async function toggleEquip(item){
   }catch(e){ /* 무시 */ }
 }
 
+// ===== 등급(rarity) 표시 헬퍼 - 인벤토리/펫 공용 =====
+const RARITY_META = {
+  rare:      { cls: 'rarity-rare',    badgeCls: 'b-rare',      label: '⭐레어' },
+  special:   { cls: 'rarity-special', badgeCls: 'b-special',   label: '⭐⭐스페셜' },
+  legendary: { cls: 'legendary',      badgeCls: 'b-legendary', label: '🌟전설' },
+  secret:    { cls: 'legendary',      badgeCls: 'b-legendary', label: '🔒시크릿' },
+};
+function rarityExtras(rarity){
+  const meta = RARITY_META[rarity];
+  if(!meta) return { cls: '', badge: '' };
+  return { cls: ' ' + meta.cls, badge: `<span class="rarity-badge ${meta.badgeCls}">${meta.label}</span>` };
+}
+
 function renderEquippedVisuals(){
   const stageEl = document.getElementById('char-stage');
   const auraLayer = document.getElementById('aura-layer');
@@ -1846,15 +1891,18 @@ async function renderInventory(){
       (item.kind === 'aura' && currentUserData.equippedAura && currentUserData.equippedAura.itemId === item.id) ||
       (item.kind === 'frame' && currentUserData.equippedFrame && currentUserData.equippedFrame.itemId === item.id)
     );
-    div.className = 'inv-item' + (item.rarity === 'legendary' ? ' legendary' : '') + (isEquipped ? ' equipped' : '');
+    const rarityInfo = rarityExtras(item.rarity);
+    div.className = 'inv-item' + rarityInfo.cls + (isEquipped ? ' equipped' : '');
     div.title = item.name + (isEquippable ? (isEquipped ? ' (장착중, 탭해서 해제)' : ' (탭해서 장착)') : '');
+    let inner = rarityInfo.badge;
     if(item.imageUrl){
-      div.innerHTML = `<img src="${item.imageUrl}" alt="${escapeHtml(item.name)}" style="width:70%;height:70%;object-fit:contain;">`;
+      inner += `<img src="${item.imageUrl}" alt="${escapeHtml(item.name)}" style="width:70%;height:70%;object-fit:contain;">`;
     } else if(isEquippable){
-      div.innerHTML = `<span style="display:inline-block; width:60%; height:60%; border-radius:50%; background:${item.color || '#FFD866'};"></span>`;
+      inner += `<span style="display:inline-block; width:60%; height:60%; border-radius:50%; background:${item.color || '#FFD866'};"></span>`;
     } else {
-      div.innerHTML = item.emoji || '🎁';
+      inner += (item.emoji || '🎁');
     }
+    div.innerHTML = inner;
     if(isEquippable){
       div.style.cursor = 'pointer';
       div.addEventListener('click', () => toggleEquip(item));
@@ -1925,11 +1973,12 @@ async function renderPets(){
     countEl.textContent = pets.length;
     pets.forEach(pet => {
       const div = document.createElement('div');
-      div.className = 'inv-item' + (pet.rarity === 'secret' ? ' legendary' : '');
+      const rarityInfo = rarityExtras(pet.rarity);
+      div.className = 'inv-item' + rarityInfo.cls;
       div.title = pet.name;
-      div.innerHTML = pet.imageUrl
+      div.innerHTML = rarityInfo.badge + (pet.imageUrl
         ? `<img src="${pet.imageUrl}" alt="${escapeHtml(pet.name)}" style="width:70%;height:70%;object-fit:contain;">`
-        : (pet.emoji || '🐾');
+        : (pet.emoji || '🐾'));
       grid.appendChild(div);
     });
     const first = pets[0];
