@@ -819,9 +819,23 @@
     </div>
 
     <div class="inventory-box">
-      <div class="past-forms-title">🎒 인벤토리 (<span id="inv-count">0</span>개)</div>
+      <div class="past-forms-title">🎒 아이템 (<span id="inv-count">0</span>개)</div>
       <div class="inventory-grid" id="inventory-grid">
         <div class="inv-empty" id="inv-empty">아직 모은 아이템이 없어요</div>
+      </div>
+    </div>
+
+    <div class="inventory-box">
+      <div class="past-forms-title">🌌 오라 (<span id="aura-count">0</span>개) <span style="opacity:0.5; font-weight:normal;">(탭해서 장착)</span></div>
+      <div class="inventory-grid" id="aura-grid">
+        <div class="inv-empty" id="aura-empty">아직 모은 오라가 없어요</div>
+      </div>
+    </div>
+
+    <div class="inventory-box">
+      <div class="past-forms-title">🎞️ 프레임 (<span id="frame-item-count">0</span>개) <span style="opacity:0.5; font-weight:normal;">(탭해서 장착)</span></div>
+      <div class="inventory-grid" id="frame-item-grid">
+        <div class="inv-empty" id="frame-item-empty">아직 모은 프레임이 없어요</div>
       </div>
     </div>
 
@@ -1817,46 +1831,69 @@ function renderEquippedVisuals(){
 }
 
 async function renderInventory(){
-  const grid = document.getElementById('inventory-grid');
-  const countEl = document.getElementById('inv-count');
+  const plainGrid = document.getElementById('inventory-grid');
+  const auraGrid = document.getElementById('aura-grid');
+  const frameGrid = document.getElementById('frame-item-grid');
+  const plainCountEl = document.getElementById('inv-count');
+  const auraCountEl = document.getElementById('aura-count');
+  const frameCountEl = document.getElementById('frame-item-count');
+
+  function makeCard(item){
+    const div = document.createElement('div');
+    const isEquippable = item.kind === 'aura' || item.kind === 'frame';
+    const isEquipped = isEquippable && (
+      (item.kind === 'aura' && currentUserData.equippedAura && currentUserData.equippedAura.itemId === item.id) ||
+      (item.kind === 'frame' && currentUserData.equippedFrame && currentUserData.equippedFrame.itemId === item.id)
+    );
+    div.className = 'inv-item' + (item.rarity === 'legendary' ? ' legendary' : '') + (isEquipped ? ' equipped' : '');
+    div.title = item.name + (isEquippable ? (isEquipped ? ' (장착중, 탭해서 해제)' : ' (탭해서 장착)') : '');
+    div.innerHTML = item.imageUrl
+      ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.name)}" style="width:70%;height:70%;object-fit:contain;">`
+      : (item.emoji || '🎁');
+    if(isEquippable){
+      div.style.cursor = 'pointer';
+      div.addEventListener('click', () => toggleEquip(item));
+    }
+    return div;
+  }
+
   try{
     const snap = await db.ref('users/' + currentUid + '/inventory').get();
-    grid.innerHTML = '';
-    if(!snap.exists()){
-      countEl.textContent = '0';
-      grid.innerHTML = '<div class="inv-empty" id="inv-empty">아직 모은 아이템이 없어요</div>';
-      cachedInventory = [];
-      renderFrame();
-      renderEquippedVisuals();
-      return;
+    const allItems = [];
+    if(snap.exists()){
+      snap.forEach(child => { allItems.push({ id: child.key, ...child.val() }); });
     }
-    const items = [];
-    snap.forEach(child => { items.push({ id: child.key, ...child.val() }); });
-    items.sort((a,b) => (b.wonAt||0) - (a.wonAt||0));
-    cachedInventory = items;
-    countEl.textContent = items.length;
-    items.forEach(item => {
-      const div = document.createElement('div');
-      const isEquippable = item.kind === 'aura' || item.kind === 'frame';
-      const isEquipped = isEquippable && (
-        (item.kind === 'aura' && currentUserData.equippedAura && currentUserData.equippedAura.itemId === item.id) ||
-        (item.kind === 'frame' && currentUserData.equippedFrame && currentUserData.equippedFrame.itemId === item.id)
-      );
-      div.className = 'inv-item' + (item.rarity === 'legendary' ? ' legendary' : '') + (isEquipped ? ' equipped' : '');
-      div.title = item.name + (isEquippable ? (isEquipped ? ' (장착중, 탭해서 해제)' : ' (탭해서 장착)') : '');
-      div.innerHTML = item.imageUrl
-        ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.name)}" style="width:70%;height:70%;object-fit:contain;">`
-        : (item.emoji || '🎁');
-      if(isEquippable){
-        div.style.cursor = 'pointer';
-        div.addEventListener('click', () => toggleEquip(item));
-      }
-      grid.appendChild(div);
-    });
+    allItems.sort((a,b) => (b.wonAt||0) - (a.wonAt||0));
+    cachedInventory = allItems;
+
+    const plainItems = allItems.filter(i => i.kind !== 'aura' && i.kind !== 'frame');
+    const auraItems = allItems.filter(i => i.kind === 'aura');
+    const frameItems = allItems.filter(i => i.kind === 'frame');
+
+    plainCountEl.textContent = plainItems.length;
+    plainGrid.innerHTML = plainItems.length
+      ? ''
+      : '<div class="inv-empty" id="inv-empty">아직 모은 아이템이 없어요</div>';
+    plainItems.forEach(item => plainGrid.appendChild(makeCard(item)));
+
+    auraCountEl.textContent = auraItems.length;
+    auraGrid.innerHTML = auraItems.length
+      ? ''
+      : '<div class="inv-empty" id="aura-empty">아직 모은 오라가 없어요</div>';
+    auraItems.forEach(item => auraGrid.appendChild(makeCard(item)));
+
+    frameCountEl.textContent = frameItems.length;
+    frameGrid.innerHTML = frameItems.length
+      ? ''
+      : '<div class="inv-empty" id="frame-item-empty">아직 모은 프레임이 없어요</div>';
+    frameItems.forEach(item => frameGrid.appendChild(makeCard(item)));
+
     renderFrame();
     renderEquippedVisuals();
   }catch(e){
-    countEl.textContent = '0';
+    plainCountEl.textContent = '0';
+    auraCountEl.textContent = '0';
+    frameCountEl.textContent = '0';
   }
 }
 
