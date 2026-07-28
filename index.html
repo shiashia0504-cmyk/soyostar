@@ -1444,7 +1444,7 @@ async function renderPastForms(){
       return;
     }
     const forms = [];
-    snap.forEach(child => forms.push(child.val()));
+    snap.forEach(child => { forms.push(child.val()); });
     forms.sort((a,b) => (a.ts||0) - (b.ts||0));
 
     row.innerHTML = '';
@@ -1741,7 +1741,7 @@ async function renderInventory(){
       return;
     }
     const items = [];
-    snap.forEach(child => items.push({ id: child.key, ...child.val() }));
+    snap.forEach(child => { items.push({ id: child.key, ...child.val() }); });
     items.sort((a,b) => (b.wonAt||0) - (a.wonAt||0));
     cachedInventory = items;
     countEl.textContent = items.length;
@@ -1777,7 +1777,7 @@ async function renderPets(){
       return;
     }
     const pets = [];
-    snap.forEach(child => pets.push({ id: child.key, ...child.val() }));
+    snap.forEach(child => { pets.push({ id: child.key, ...child.val() }); });
     pets.sort((a,b) => (b.wonAt||0) - (a.wonAt||0));
     cachedPets = pets;
     countEl.textContent = pets.length;
@@ -1949,7 +1949,7 @@ async function drawGacha(poolPath, coinCost, isSecret){
       return;
     }
     const pool = [];
-    poolSnap.forEach(child => pool.push({ id: child.key, ...child.val() }));
+    poolSnap.forEach(child => { pool.push({ id: child.key, ...child.val() }); });
 
     const picked = isSecret
       ? pool[Math.floor(Math.random() * pool.length)]
@@ -2043,7 +2043,7 @@ async function refreshFeedState(){
     const allBooks = [];
     const booksSnap = await db.ref('books/' + currentUid).get();
     if(booksSnap.exists()){
-      booksSnap.forEach(child => allBooks.push(child.val()));
+      booksSnap.forEach(child => { allBooks.push(child.val()); });
     }
     if(snap.exists()){
       snap.forEach(() => { todayCount++; });
