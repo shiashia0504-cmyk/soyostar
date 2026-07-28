@@ -1443,13 +1443,13 @@ document.getElementById('btn-reincarnate').addEventListener('click', async () =>
   btn.disabled = true;
 
   try{
-    // 현재 모습 스냅샷 저장
+    // 현재 모습 스냅샷 저장 (undefined 값이 있으면 Firebase가 저장 자체를 거부하므로 전부 안전한 기본값으로 보정)
     await db.ref('pastForms/' + currentUid).push({
-      evolutionType: currentUserData.evolutionType,
-      hex: currentUserData.hex,
+      evolutionType: currentUserData.evolutionType || null,
+      hex: currentUserData.hex || null,
       honorLevel: currentUserData.honorLevel || 0,
-      xp: currentUserData.xp,
-      charName: currentUserData.charName,
+      xp: currentUserData.xp || 0,
+      charName: currentUserData.charName || null,
       ts: Date.now(),
     });
 
@@ -1477,7 +1477,8 @@ document.getElementById('btn-reincarnate').addEventListener('click', async () =>
     updateHungerBar(80);
     checkGrowthProgress();
   }catch(e){
-    alert('환생에 실패했어요. 다시 눌러줄래?');
+    console.error('환생 실패:', e);
+    alert('환생에 실패했어요: ' + e.message);
   }finally{
     btn.disabled = false;
   }
