@@ -1847,9 +1847,13 @@ async function renderInventory(){
     );
     div.className = 'inv-item' + (item.rarity === 'legendary' ? ' legendary' : '') + (isEquipped ? ' equipped' : '');
     div.title = item.name + (isEquippable ? (isEquipped ? ' (장착중, 탭해서 해제)' : ' (탭해서 장착)') : '');
-    div.innerHTML = item.imageUrl
-      ? `<img src="${item.imageUrl}" alt="${escapeHtml(item.name)}" style="width:70%;height:70%;object-fit:contain;">`
-      : (item.emoji || '🎁');
+    if(item.imageUrl){
+      div.innerHTML = `<img src="${item.imageUrl}" alt="${escapeHtml(item.name)}" style="width:70%;height:70%;object-fit:contain;">`;
+    } else if(isEquippable){
+      div.innerHTML = `<span style="display:inline-block; width:60%; height:60%; border-radius:50%; background:${item.color || '#FFD866'};"></span>`;
+    } else {
+      div.innerHTML = item.emoji || '🎁';
+    }
     if(isEquippable){
       div.style.cursor = 'pointer';
       div.addEventListener('click', () => toggleEquip(item));
