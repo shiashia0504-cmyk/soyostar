@@ -1670,17 +1670,28 @@ document.getElementById('btn-submit-code').addEventListener('click', async () =>
     const newXp = (currentUserData.xp || 0) + gainXp;
     const updates = { xp: newXp };
 
+    // 신버전(rewardType/rewardName) 또는 구버전(itemName/itemEmoji) 코드 스키마 둘 다 인식
+    let rewardType = codeData.rewardType;
+    let rewardName = codeData.rewardName;
+    let rewardEmoji = codeData.rewardEmoji;
+    let rewardImageUrl = codeData.rewardImageUrl;
+    if(!rewardType && codeData.itemName){
+      rewardType = 'item';
+      rewardName = codeData.itemName;
+      rewardEmoji = codeData.itemEmoji;
+    }
+
     let rewardMsg = '';
-    if(codeData.rewardType === 'item' || codeData.rewardType === 'pet'){
-      const targetPath = codeData.rewardType === 'pet' ? 'pets' : 'inventory';
+    if(rewardType === 'item' || rewardType === 'pet'){
+      const targetPath = rewardType === 'pet' ? 'pets' : 'inventory';
       const record = {
-        name: codeData.rewardName,
-        emoji: codeData.rewardEmoji || (codeData.rewardType === 'pet' ? '🐾' : '🎁'),
+        name: rewardName,
+        emoji: rewardEmoji || (rewardType === 'pet' ? '🐾' : '🎁'),
         wonAt: Date.now(),
         source: code,
       };
-      if(codeData.rewardType === 'pet') record.rarity = 'secret';
-      if(codeData.rewardImageUrl) record.imageUrl = codeData.rewardImageUrl;
+      if(rewardType === 'pet') record.rarity = 'secret';
+      if(rewardImageUrl) record.imageUrl = rewardImageUrl;
 
       const rewardKey = db.ref(`users/${currentUid}/${targetPath}`).push().key;
       await db.ref(`users/${currentUid}/${targetPath}/${rewardKey}`).set(record);
